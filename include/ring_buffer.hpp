@@ -52,61 +52,101 @@ class RingBuffer {
             }
         }
 
+        // =====================================================================
+        // Legacy Single-Copy API (Uses memcpy)
+        // =====================================================================
+
         bool try_write(uint64_t seq, const uint8_t* payload, uint32_t len) {
-            // 1. Load the current write position (relaxed: we are the only writer)
-            uint64_t current_write = header->write_index.load(std::memory_order_relaxed);
-
-            // 2. Check if the buffer is full using our cached read index
-            if (current_write - header->cached_read_index >= RING_BUFFER_CAPACITY) {
-                // Buffer might be full. Fetch the real read_index across the memory bus to check.
-                header->cached_read_index = header->read_index.load(std::memory_order_acquire);
-                if (current_write - header->cached_read_index >= RING_BUFFER_CAPACITY){
-                    return false; // Actually full. Drop or retry.
-                }
+            Slot* slot = reserve_write();
+            if (!slot) {
+                return false;
             }
 
-            // 3. Write tha data to the correct slot
-            // Fast bitwise modulo because RING_BUFFER_CAPACITY is a power of 2
-            uint64_t slot_idx = current_write & (RING_BUFFER_CAPACITY - 1);
-            Slot& slot = slots[slot_idx];
+            slot->seq = seq;
+            slot->len = std::min(len, static_cast<uint32_t>(sizeof(slot->payload)));
+            std::memcpy(slot->payload, payload, slot->len);
 
-            slot.seq = seq;
-            slot.len = std::min(len, static_cast<uint32_t>(sizeof(slot.payload)));
-            std::memcpy(slot.payload, payload, slot.len);
-
-            // 4. Publish the write to the consumer
-            // RELEASE semantics: ensure the payload copy finishes BEFORE the index increments
-            header->write_index.store(current_write+1, std::memory_order_release);
-
-            // 5. Wake the consumer ONLY if it is sleeping
-            // We use seq_cst to ensure store-load ordering with the consumer's futex_word
-            if(__builtin_expect(header->futex_word.load(std::memory_order_seq_cst) == 1, 0)) {
-                header->futex_word.store(0, std::memory_order_relaxed);
-                futex_wake(&header->futex_word, 1);
-            }
+            commit_write();
             return true;
         }
 
-        bool try_read(Slot& out_slot) {
-            // 1. Load the current read position (relaxed: we are the only reader)
-            uint64_t current_read = header->read_index.load(std::memory_order_relaxed);
+        // =====================================================================
+        // True Zero-Copy API (Two-Phase: reserve -> in-place fill -> commit)
+        // =====================================================================
 
-            // 2. Check if the buffer is empty
-            if (header->cached_write_index - current_read == 0) {
-                // Might be empty. Fetch the real write_index across the memory bus.
-                // ACQUIRE semantics: prevents the CPU from reading the payload before seeing the index update
-                header->cached_write_index = header->write_index.load(std::memory_order_acquire);
-                if (header->cached_write_index - current_read == 0){
-                    return false; // Actually empty.
+        /**
+         * @brief Phase 1 (Producer): Reserve a slot directly in shared memory.
+         * @return Pointer to raw Slot in SHM, or nullptr if the buffer is full.
+         */
+        Slot* reserve_write() {
+            uint64_t current_write = header->write_index.load(std::memory_order_relaxed);
+
+            // Check if buffer is full using local cached_read_index
+            if (current_write - header->cached_read_index >= RING_BUFFER_CAPACITY) {
+                header->cached_read_index = header->read_index.load(std::memory_order_acquire);
+                if (current_write - header->cached_read_index >= RING_BUFFER_CAPACITY) {
+                    return nullptr; // Buffer full
                 }
             }
 
-            // 3. Read the data
-            uint64_t slot_idx = current_read & (RING_BUFFER_CAPACITY - 1);
-            out_slot = slots[slot_idx]; // Copy the whole slot
+            // Return direct pointer to slot in SHM! Caller fills it in-place.
+            uint64_t slot_idx = current_write & (RING_BUFFER_CAPACITY - 1);
+            return &slots[slot_idx];
+        }
 
-            //4. Publish the read to the producer so it can reclaim the space
+        /**
+         * @brief Phase 2 (Producer): Commit the reserved slot and publish to consumer.
+         */
+        void commit_write() {
+            uint64_t current_write = header->write_index.load(std::memory_order_relaxed);
+
+            // 1. Publish the write to the consumer
+            // RELEASE semantics: ensures caller's in-place writes finish BEFORE write_index increments
+            header->write_index.store(current_write + 1, std::memory_order_release);
+
+            // 2. Wake the consumer ONLY if it is sleeping on the futex
+            if (__builtin_expect(header->futex_word.load(std::memory_order_seq_cst) == 1, 0)) {
+                header->futex_word.store(0, std::memory_order_relaxed);
+                futex_wake(&header->futex_word, 1);
+            }
+        }
+
+        /**
+         * @brief Phase 1 (Consumer): Inspect the next available slot in-place.
+         * @return Pointer to const Slot directly in SHM, or nullptr if empty.
+         */
+        const Slot* peek_read() {
+            uint64_t current_read = header->read_index.load(std::memory_order_relaxed);
+
+            // Check if buffer is empty
+            if (header->cached_write_index - current_read == 0) {
+                header->cached_write_index = header->write_index.load(std::memory_order_acquire);
+                if (header->cached_write_index - current_read == 0) {
+                    return nullptr; // Buffer empty
+                }
+            }
+
+            // Return direct pointer to slot in SHM! Caller reads without copying.
+            uint64_t slot_idx = current_read & (RING_BUFFER_CAPACITY - 1);
+            return &slots[slot_idx];
+        }
+
+        /**
+         * @brief Phase 2 (Consumer): Advance read_index after inspecting the slot.
+         */
+        void commit_read() {
+            uint64_t current_read = header->read_index.load(std::memory_order_relaxed);
+            // RELEASE semantics: producer can reclaim this slot
             header->read_index.store(current_read + 1, std::memory_order_release);
+        }
+
+        bool try_read(Slot& out_slot) {
+            const Slot* slot = peek_read();
+            if (!slot) {
+                return false;
+            }
+            out_slot = *slot; // Copy
+            commit_read();
             return true;
         }
 

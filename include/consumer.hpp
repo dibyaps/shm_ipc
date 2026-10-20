@@ -40,6 +40,21 @@ public:
     Consumer& operator=(Consumer&&) noexcept = default;
 
     /**
+     * @brief Phase 1 (Zero-Copy): Inspect the next available slot in-place.
+     * @return Pointer to const Slot directly in SHM, or nullptr if queue is empty.
+     */
+    const Slot* peek() {
+        return ring_.peek_read();
+    }
+
+    /**
+     * @brief Phase 2 (Zero-Copy): Advance read index after inspecting slot.
+     */
+    void commit() {
+        ring_.commit_read();
+    }
+
+    /**
      * @brief Non-blocking read.
      * @param out_slot Reference to Slot structure to receive the data
      * @return true if a message was read, false if the queue is empty.

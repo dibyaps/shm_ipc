@@ -1,0 +1,51 @@
+name: CI Multi-Distro Build & Test
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test_linux:
+    name: Test on ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [rockylinux-9, ubuntu-24.04]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Rocky Linux 9 Container Test (Targeting enterprise RHEL/Nutanix/Pure Storage environments)
+      - name: Run Build, Tests & Benchmark on Rocky Linux 9
+        if: matrix.distro == 'rockylinux-9'
+        uses: docker://rockylinux:9
+        with:
+          args: >
+            bash -c "
+            dnf install -y gcc-c++ make gtest-devel librt &&
+            make all &&
+            make test &&
+            make bench
+            "
+
+      # Ubuntu 24.04 Host Test
+      - name: Run Build, Tests & Benchmark on Ubuntu 24.04
+        if: matrix.distro == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtest-dev build-essential
+          make all
+          make test
+          make bench
+
+      # Upload test report artifacts on GitHub
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.distro }}
+          path: reports/

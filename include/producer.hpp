@@ -42,6 +42,26 @@ public:
     Producer& operator=(Producer&&) noexcept = default;
 
     /**
+     * @brief Phase 1 (Zero-Copy): Reserve a raw Slot in shared memory.
+     * Allows the caller to populate the payload in-place without any memcpy!
+     * @return Pointer to Slot in SHM, or nullptr if buffer is full.
+     */
+    Slot* reserve() {
+        Slot* slot = ring_.reserve_write();
+        if (slot) {
+            slot->seq = seq_++; // Stamp sequence ID automatically
+        }
+        return slot;
+    }
+
+    /**
+     * @brief Phase 2 (Zero-Copy): Commit the reserved slot and publish to consumer.
+     */
+    void commit() {
+        ring_.commit_write();
+    }
+
+    /**
      * @brief Non-blocking write.
      * @param data Pointer to the payload bytes
      * @param len Length of the payload in bytes
