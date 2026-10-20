@@ -42,6 +42,7 @@ test: directories $(TEST_TARGET)
 	@echo "--- Running All Google Unit & Integration Tests ---"
 	@./$(TEST_TARGET) --gtest_output="xml:$(REPORT_DIR)/test_report.xml" | tee $(REPORT_DIR)/test_run.log
 	@echo "--- Test Report saved to $(REPORT_DIR)/test_report.xml and $(REPORT_DIR)/test_run.log ---"
+	@python3 scripts/generate_report.py
 
 bench: directories $(BENCH_TARGET)
 	@echo "--- Running Zero-Copy vs Single-Copy Benchmark ---"

@@ -3,11 +3,9 @@
 [![CI Multi-Distro Build & Test](https://github.com/dibyaps/shm_ipc/actions/workflows/ci.yml/badge.svg)](https://github.com/dibyaps/shm_ipc/actions/workflows/ci.yml)
 ![Language](https://img.shields.io/badge/Language-C%2B%2B20-blue.svg)
 ![OS](https://img.shields.io/badge/OS-Rocky%20Linux%209%20%7C%20Ubuntu-orange.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 A low-latency, lock-free **Single-Producer Single-Consumer (SPSC)** Inter-Process Communication (IPC) middleware engine implemented in modern **C++20** for Linux.
 
-Designed for systems infrastructure, low-latency telemetry, and storage appliance architectures (targeting use cases at **Pure Storage, Nutanix, NetApp, and Akamai**).
 
 ---
 

@@ -3,8 +3,18 @@ name: CI Multi-Distro Build & Test
 on:
   push:
     branches: [ master, main ]
+    paths-ignore:
+      - 'README.md'
+      - 'plan.md'
+      - 'docs/**'
+      - '.gitignore'
   pull_request:
     branches: [ master, main ]
+    paths-ignore:
+      - 'README.md'
+      - 'plan.md'
+      - 'docs/**'
+      - '.gitignore'
 
 jobs:
   test_linux:
@@ -28,10 +38,10 @@ jobs:
             bash -c "
             dnf install -y dnf-plugins-core epel-release &&
             dnf config-manager --set-enabled crb &&
-            dnf install -y gcc-c++ make gtest-devel glibc-devel &&
+            dnf install -y gcc-c++ make gtest-devel glibc-devel python3 &&
             make all &&
-            make test &&
-            make bench
+            make bench &&
+            make test
             "
 
       # Ubuntu 24.04 Host Test
@@ -39,10 +49,10 @@ jobs:
         if: matrix.distro == 'ubuntu-24.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtest-dev build-essential
+          sudo apt-get install -y libgtest-dev build-essential python3
           make all
-          make test
           make bench
+          make test
 
       # Upload test report artifacts on GitHub Actions
       - name: Upload Test Report
