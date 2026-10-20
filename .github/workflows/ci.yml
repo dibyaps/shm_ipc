@@ -19,14 +19,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Rocky Linux 9 Container Test (Targeting enterprise RHEL/Nutanix/Pure Storage environments)
+      # Rocky Linux 9 Container Test (Enabling CRB & EPEL for gtest-devel)
       - name: Run Build, Tests & Benchmark on Rocky Linux 9
         if: matrix.distro == 'rockylinux-9'
         uses: docker://rockylinux:9
         with:
           args: >
             bash -c "
-            dnf install -y gcc-c++ make gtest-devel librt &&
+            dnf install -y dnf-plugins-core epel-release &&
+            dnf config-manager --set-enabled crb &&
+            dnf install -y gcc-c++ make gtest-devel glibc-devel &&
             make all &&
             make test &&
             make bench
@@ -42,7 +44,7 @@ jobs:
           make test
           make bench
 
-      # Upload test report artifacts on GitHub
+      # Upload test report artifacts on GitHub Actions
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
