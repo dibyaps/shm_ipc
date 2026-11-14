@@ -3,20 +3,20 @@
   Iterations: 10000000 messages (52 bytes each)                
 ------------------------------------------------------------------------
   [System Environment]
-    CPU Model:    INTEL(R) XEON(R) PLATINUM 8573C (4 logical cores)
-    OS & Kernel:  Ubuntu 26.04.1 LTS (Linux 7.0.0-1019-azure x86_64)
+    CPU Model:    Intel(R) Xeon(R) 6975P-C (4 logical cores)
+    OS & Kernel:  Ubuntu 26.04.1 LTS (Linux 7.0.0-1016-aws x86_64)
     Architecture: x86_64 | Cache Line: 64 bytes
     Compiler:     GCC 15.2.0
 ========================================================================
 
 [1] Single-Copy (memcpy):
-    Time taken:   0.0825 seconds
-    Throughput:   121.22 Million msg/sec
-    Latency:      8.2 ns per round-trip
+    Time taken:   0.0668 seconds
+    Throughput:   149.72 Million msg/sec
+    Latency:      6.7 ns per round-trip
 
 [2] Zero-Copy (In-Place reserve/commit):
-    Time taken:   0.0234 seconds
-    Throughput:   426.53 Million msg/sec
-    Latency:      2.3 ns per round-trip
+    Time taken:   0.0183 seconds
+    Throughput:   545.58 Million msg/sec
+    Latency:      1.8 ns per round-trip
 
 =========================================================
