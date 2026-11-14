@@ -38,6 +38,7 @@ REPORT_DIR = reports
 TARGETS = $(BUILD_DIR)/writer $(BUILD_DIR)/reader
 TEST_TARGET = $(BUILD_DIR)/unit_tests
 BENCH_TARGET = $(BUILD_DIR)/bench_zerocopy
+BENCH_APIS_TARGET = $(BUILD_DIR)/bench_producer_apis
 
 # All test sources combined into the test binary
 TEST_SRCS = $(TEST_DIR)/test_layout.cpp \
@@ -61,6 +62,9 @@ $(BUILD_DIR)/reader: $(SRC_DIR)/shm_reader.cpp
 $(BENCH_TARGET): $(BENCH_DIR)/bench_zerocopy.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
+$(BENCH_APIS_TARGET): $(BENCH_DIR)/bench_producer_apis.cpp
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
+
 # Google Test unified runner
 $(TEST_TARGET): $(TEST_SRCS)
 	$(CXX) $(CXXFLAGS) $(TEST_SRCS) -o $@ $(LDFLAGS) -lgtest -lgtest_main -lpthread
@@ -75,6 +79,10 @@ bench: directories $(BENCH_TARGET)
 	@echo "--- Running Zero-Copy vs Single-Copy Benchmark ---"
 	@./$(BENCH_TARGET) | tee $(REPORT_DIR)/bench_run.log
 	@echo "--- Benchmark Report saved to $(REPORT_DIR)/bench_run.log ---"
+
+bench-apis: directories $(BENCH_APIS_TARGET)
+	@echo "--- Running Producer APIs Head-to-Head Benchmark ---"
+	@./$(BENCH_APIS_TARGET)
 
 clean:
 	rm -rf $(BUILD_DIR) $(REPORT_DIR)

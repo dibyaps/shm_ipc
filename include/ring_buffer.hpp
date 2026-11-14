@@ -109,9 +109,12 @@ class RingBuffer {
             // RELEASE semantics: ensures caller's in-place writes finish BEFORE write_index increments
             header->write_index.store(current_write + 1, std::memory_order_release);
 
-            // 2. Wake the consumer ONLY if it is sleeping on the futex
-            if (__builtin_expect(header->futex_word.exchange(0, std::memory_order_seq_cst) == 1, 0)) {
-                futex_wake(&header->futex_word, 1);
+            // 2. Wake the consumer ONLY if it is sleeping on the futex (futex_word == 1)
+            // Fast-path: simple relaxed read avoids expensive atomic RMW bus lock on every message!
+            if (__builtin_expect(header->futex_word.load(std::memory_order_relaxed) == 1, 0)) {
+                if (header->futex_word.exchange(0, std::memory_order_seq_cst) == 1) {
+                    futex_wake(&header->futex_word, 1);
+                }
             }
         }
 

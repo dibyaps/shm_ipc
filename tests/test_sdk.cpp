@@ -220,3 +220,107 @@ TEST_F(SDKTest, FutexSleepAndWakeupAfterDelay) {
 
     EXPECT_TRUE(consumer_woken.load()) << "Consumer was not woken up by producer!";
 }
+
+// 8. Scenario 1: Zero-Copy reserve() & commit() with Buffer-Full Backpressure
+TEST_F(SDKTest, ScenarioZeroCopyReserveCommitWithBackpressure) {
+    ipc::Producer producer(channel_name);
+    ipc::Consumer consumer(channel_name);
+
+    // Fill the entire ring buffer (1024 slots)
+    for (size_t i = 0; i < RING_BUFFER_CAPACITY; ++i) {
+        Slot* slot = producer.reserve();
+        ASSERT_NE(slot, nullptr) << "Failed to reserve slot " << i;
+        slot->len = 8;
+        *reinterpret_cast<uint64_t*>(slot->payload) = i;
+        producer.commit();
+    }
+
+    // Attempting to reserve when buffer is full must return nullptr immediately (NO blocking!)
+    Slot* overflow_slot = producer.reserve();
+    EXPECT_EQ(overflow_slot, nullptr) << "reserve() must return nullptr when ring buffer is full!";
+
+    // Consumer inspects first slot via zero-copy peek()
+    const Slot* peeked = consumer.peek();
+    ASSERT_NE(peeked, nullptr);
+    EXPECT_EQ(*reinterpret_cast<const uint64_t*>(peeked->payload), 0ULL);
+    consumer.commit(); // Free up 1 slot
+
+    // Now producer can reserve again!
+    Slot* recovered_slot = producer.reserve();
+    ASSERT_NE(recovered_slot, nullptr) << "reserve() must succeed once a slot is freed!";
+    recovered_slot->len = 8;
+    *reinterpret_cast<uint64_t*>(recovered_slot->payload) = 99999ULL;
+    producer.commit();
+}
+
+// 9. Scenario 2: Non-Blocking try_send() with Fail-Fast Backpressure
+TEST_F(SDKTest, ScenarioTrySendNonBlockingBackpressure) {
+    ipc::Producer producer(channel_name);
+    ipc::Consumer consumer(channel_name);
+
+    uint64_t dummy = 0xDEADBEEF;
+
+    // Fill buffer up to capacity
+    for (size_t i = 0; i < RING_BUFFER_CAPACITY; ++i) {
+        bool ok = producer.try_send(&dummy, sizeof(dummy));
+        ASSERT_TRUE(ok) << "try_send failed at index " << i;
+    }
+
+    // Buffer is full: try_send MUST return false immediately without hanging
+    bool overflow_ok = producer.try_send(&dummy, sizeof(dummy));
+    EXPECT_FALSE(overflow_ok) << "try_send must return false when buffer is full!";
+
+    // Consumer receives 1 message non-blockingly
+    Slot out_slot{};
+    ASSERT_TRUE(consumer.try_receive(out_slot));
+    EXPECT_EQ(out_slot.len, sizeof(dummy));
+
+    // Now try_send must succeed
+    EXPECT_TRUE(producer.try_send(&dummy, sizeof(dummy)));
+}
+
+// 10. Scenario 3: Blocking send() with Guaranteed Delivery Under Buffer Saturation
+TEST_F(SDKTest, ScenarioBlockingSendGuaranteedDeliveryConcurrent) {
+    ipc::Producer producer(channel_name);
+
+    const size_t total_messages = 20000;
+    std::atomic<bool> producer_done{false};
+    std::atomic<size_t> received_count{0};
+    std::vector<uint64_t> received_values;
+    received_values.reserve(total_messages);
+
+    // Consumer Thread: slowly processes messages to repeatedly saturate the buffer
+    std::thread consumer_thread([&]() {
+        ipc::Consumer consumer(channel_name);
+        Slot slot{};
+
+        while (received_count.load() < total_messages) {
+            if (consumer.receive(slot)) {
+                uint64_t val = *reinterpret_cast<const uint64_t*>(slot.payload);
+                received_values.push_back(val);
+                received_count.fetch_add(1, std::memory_order_relaxed);
+
+                // Introduce artificial throttling every 1000 messages to force the buffer to fill
+                if (received_count.load() % 1000 == 0) {
+                    std::this_thread::sleep_for(std::chrono::microseconds(200));
+                }
+            }
+        }
+    });
+
+    // Producer Thread (main): pushes all messages using blocking send()
+    for (uint64_t i = 0; i < total_messages; ++i) {
+        producer.send(&i, sizeof(i)); // Blocks with cpu_pause() whenever buffer fills
+    }
+    producer_done.store(true);
+
+    consumer_thread.join();
+
+    EXPECT_EQ(received_count.load(), total_messages);
+    ASSERT_EQ(received_values.size(), total_messages);
+
+    // Verify guaranteed 100% in-order, lossless delivery
+    for (size_t i = 0; i < total_messages; ++i) {
+        ASSERT_EQ(received_values[i], i) << "Sequence mismatch at index " << i;
+    }
+}

@@ -3,6 +3,53 @@
 #include <chrono>
 #include <iomanip>
 #include <cstring>
+#include <fstream>
+#include <string>
+#include <sys/utsname.h>
+#include <unistd.h>
+
+// Helper to inspect and print system hardware and OS environment
+static void print_system_info() {
+    utsname buf{};
+    uname(&buf);
+
+    std::string cpu_model = "Unknown CPU";
+    std::ifstream cpuinfo("/proc/cpuinfo");
+    if (cpuinfo.is_open()) {
+        std::string line;
+        while (std::getline(cpuinfo, line)) {
+            if (line.find("model name") != std::string::npos) {
+                auto pos = line.find(':');
+                if (pos != std::string::npos) {
+                    cpu_model = line.substr(pos + 2);
+                    break;
+                }
+            }
+        }
+    }
+
+    std::string os_name = buf.sysname;
+    std::ifstream os_rel("/etc/os-release");
+    if (os_rel.is_open()) {
+        std::string line;
+        while (std::getline(os_rel, line)) {
+            if (line.rfind("PRETTY_NAME=", 0) == 0) {
+                os_name = line.substr(12);
+                if (!os_name.empty() && os_name.front() == '"') os_name.erase(0, 1);
+                if (!os_name.empty() && os_name.back() == '"') os_name.pop_back();
+                break;
+            }
+        }
+    }
+
+    long ncores = sysconf(_SC_NPROCESSORS_ONLN);
+
+    std::cout << "  [System Environment]\n";
+    std::cout << "    CPU Model:    " << cpu_model << " (" << ncores << " logical cores)\n";
+    std::cout << "    OS & Kernel:  " << os_name << " (" << buf.sysname << " " << buf.release << " " << buf.machine << ")\n";
+    std::cout << "    Architecture: " << buf.machine << " | Cache Line: " << CACHE_LINE_SIZE << " bytes\n";
+    std::cout << "    Compiler:     GCC " << __VERSION__ << "\n";
+}
 
 // Simulating a realistic 52-byte storage I/O or market telemetry packet
 struct TelemetryPacket {
@@ -17,10 +64,12 @@ int main() {
     RingBuffer queue(memory, true);
 
     const uint64_t iterations = 10000000; // 10 Million iterations
-    std::cout << "=========================================================\n";
-    std::cout << "  IPC Performance Benchmark: Single-Copy vs. Zero-Copy   \n";
-    std::cout << "  Iterations: " << iterations << " messages (52 bytes each) \n";
-    std::cout << "=========================================================\n\n";
+    std::cout << "========================================================================\n";
+    std::cout << "  IPC Performance Benchmark: Single-Copy vs. Zero-Copy                  \n";
+    std::cout << "  Iterations: " << iterations << " messages (52 bytes each)                \n";
+    std::cout << "------------------------------------------------------------------------\n";
+    print_system_info();
+    std::cout << "========================================================================\n\n";
 
     // -------------------------------------------------------------------------
     // Benchmark 1: The Single-Copy Approach (memcpy in + memcpy out)

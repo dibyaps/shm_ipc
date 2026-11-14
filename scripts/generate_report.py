@@ -7,12 +7,57 @@ Parses Google Test JUnit XML reports and generates:
 
 import os
 import sys
+import platform
+import subprocess
 import xml.etree.ElementTree as ET
+
+def get_system_info():
+    info = {
+        "os": f"{platform.system()} {platform.release()}",
+        "arch": platform.machine(),
+        "cores": str(os.cpu_count() or "Unknown"),
+        "distro": "Linux",
+        "cpu_model": "Unknown CPU",
+        "compiler": "GCC"
+    }
+
+    # Extract Distro Name from /etc/os-release
+    if os.path.exists("/etc/os-release"):
+        try:
+            with open("/etc/os-release") as f:
+                for line in f:
+                    if line.startswith("PRETTY_NAME="):
+                        info["distro"] = line.split("=", 1)[1].strip().strip('"')
+                        break
+        except Exception:
+            pass
+
+    # Extract CPU Model from /proc/cpuinfo
+    if os.path.exists("/proc/cpuinfo"):
+        try:
+            with open("/proc/cpuinfo") as f:
+                for line in f:
+                    if "model name" in line:
+                        info["cpu_model"] = line.split(":", 1)[1].strip()
+                        break
+        except Exception:
+            pass
+
+    # Extract Compiler version
+    try:
+        res = subprocess.run(["g++", "--version"], capture_output=True, text=True, timeout=2)
+        if res.returncode == 0:
+            info["compiler"] = res.stdout.splitlines()[0]
+    except Exception:
+        pass
+
+    return info
 
 def generate_reports():
     xml_path = "reports/test_report.xml"
     html_path = "reports/index.html"
     bench_log_path = "reports/bench_run.log"
+    sys_info = get_system_info()
 
     if not os.path.exists(xml_path):
         print(f"Error: {xml_path} not found.")
@@ -101,6 +146,17 @@ def generate_reports():
         <div class="card info"><div>Total Runtime</div><div class="num">{float(total_time):.3f}s</div></div>
     </div>
 
+    <h2>🖥️ System & Hardware Environment</h2>
+    <table>
+        <tbody>
+            <tr><td style="width: 25%;"><strong>Distribution</strong></td><td>{sys_info['distro']}</td></tr>
+            <tr><td><strong>Kernel</strong></td><td>{sys_info['os']}</td></tr>
+            <tr><td><strong>CPU Model</strong></td><td>{sys_info['cpu_model']}</td></tr>
+            <tr><td><strong>Logical Cores / Arch</strong></td><td>{sys_info['cores']} cores ({sys_info['arch']})</td></tr>
+            <tr><td><strong>Compiler</strong></td><td><code>{sys_info['compiler']}</code></td></tr>
+        </tbody>
+    </table>
+
     <h2>Test Suite Breakdown</h2>
     <table>
         <thead>
@@ -146,7 +202,7 @@ def generate_reports():
     # =========================================================================
     # 2. Generate GitHub Actions Job Summary (if running in GitHub Actions)
     # =========================================================================
-    distro = os.getenv("DISTRO_NAME", "Linux")
+    distro = os.getenv("DISTRO_NAME", sys_info["distro"])
     summary_path = os.getenv("GITHUB_STEP_SUMMARY")
     if summary_path:
         passed_count = int(total_tests) - int(total_failures)
@@ -154,6 +210,14 @@ def generate_reports():
 | Total Tests | Passed | Failures | Runtime |
 | :---: | :---: | :---: | :---: |
 | **{total_tests}** | **{passed_count}** | **{total_failures}** | **{float(total_time):.3f}s** |
+
+#### 🖥️ Hardware & OS Environment:
+| Metric | Value |
+| :--- | :--- |
+| **Operating System** | {sys_info['distro']} |
+| **Kernel & Arch** | {sys_info['os']} ({sys_info['arch']}) |
+| **CPU Model** | {sys_info['cpu_model']} ({sys_info['cores']} logical cores) |
+| **Compiler** | `{sys_info['compiler']}` |
 
 #### Test Suite Breakdown:
 | Suite | Test Case | Status | Time |

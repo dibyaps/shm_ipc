@@ -81,7 +81,7 @@ public:
      */
     void send(const void* data, uint32_t len) {
         while (!try_send(data, len)) {
-            _mm_pause(); // x86 pause instruction to reduce pipeline stalls & power
+            cpu_pause(); // Portable pause instruction to reduce pipeline stalls & power
         }
     }
 
