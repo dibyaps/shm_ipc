@@ -1,5 +1,5 @@
 Running main() from ./googletest/src/gtest_main.cc
-[==========] Running 18 tests from 4 test suites.
+[==========] Running 21 tests from 4 test suites.
 [----------] Global test environment set-up.
 [----------] 1 test from MemoryLayoutTest
 [ RUN      ] MemoryLayoutTest.CacheLineAlignmentAndSizes
@@ -29,10 +29,10 @@ Running main() from ./googletest/src/gtest_main.cc
 [ RUN      ] RingBufferTest.OversizedPayloadClampedGracefully
 [       OK ] RingBufferTest.OversizedPayloadClampedGracefully (0 ms)
 [ RUN      ] RingBufferTest.ConcurrentSPSCStress500K
-[       OK ] RingBufferTest.ConcurrentSPSCStress500K (6 ms)
-[----------] 7 tests from RingBufferTest (6 ms total)
+[       OK ] RingBufferTest.ConcurrentSPSCStress500K (3 ms)
+[----------] 7 tests from RingBufferTest (3 ms total)
 
-[----------] 7 tests from SDKTest
+[----------] 10 tests from SDKTest
 [ RUN      ] SDKTest.ConsumerFailsIfProducerDoesNotExist
 [       OK ] SDKTest.ConsumerFailsIfProducerDoesNotExist (0 ms)
 [ RUN      ] SDKTest.StandardSendReceive
@@ -44,11 +44,17 @@ Running main() from ./googletest/src/gtest_main.cc
 [ RUN      ] SDKTest.ProducerMoveSemantics
 [       OK ] SDKTest.ProducerMoveSemantics (0 ms)
 [ RUN      ] SDKTest.MultiProcessCommunicationViaFork
-[       OK ] SDKTest.MultiProcessCommunicationViaFork (2 ms)
+[       OK ] SDKTest.MultiProcessCommunicationViaFork (0 ms)
 [ RUN      ] SDKTest.FutexSleepAndWakeupAfterDelay
 [       OK ] SDKTest.FutexSleepAndWakeupAfterDelay (50 ms)
-[----------] 7 tests from SDKTest (53 ms total)
+[ RUN      ] SDKTest.ScenarioZeroCopyReserveCommitWithBackpressure
+[       OK ] SDKTest.ScenarioZeroCopyReserveCommitWithBackpressure (0 ms)
+[ RUN      ] SDKTest.ScenarioTrySendNonBlockingBackpressure
+[       OK ] SDKTest.ScenarioTrySendNonBlockingBackpressure (0 ms)
+[ RUN      ] SDKTest.ScenarioBlockingSendGuaranteedDeliveryConcurrent
+[       OK ] SDKTest.ScenarioBlockingSendGuaranteedDeliveryConcurrent (5 ms)
+[----------] 10 tests from SDKTest (57 ms total)
 
 [----------] Global test environment tear-down
-[==========] 18 tests from 4 test suites ran. (59 ms total)
-[  PASSED  ] 18 tests.
+[==========] 21 tests from 4 test suites ran. (61 ms total)
+[  PASSED  ] 21 tests.

@@ -1,16 +1,22 @@
-=========================================================
-  IPC Performance Benchmark: Single-Copy vs. Zero-Copy   
-  Iterations: 10000000 messages (52 bytes each) 
-=========================================================
+========================================================================
+  IPC Performance Benchmark: Single-Copy vs. Zero-Copy                  
+  Iterations: 10000000 messages (52 bytes each)                
+------------------------------------------------------------------------
+  [System Environment]
+    CPU Model:    AMD EPYC 9V45 96-Core Processor (4 logical cores)
+    OS & Kernel:  Ubuntu 26.04.1 LTS (Linux 7.0.0-1019-azure x86_64)
+    Architecture: x86_64 | Cache Line: 64 bytes
+    Compiler:     GCC 15.2.0
+========================================================================
 
 [1] Single-Copy (memcpy):
-    Time taken:   0.0845 seconds
-    Throughput:   118.37 Million msg/sec
-    Latency:      8.4 ns per round-trip
+    Time taken:   0.0448 seconds
+    Throughput:   223.07 Million msg/sec
+    Latency:      4.5 ns per round-trip
 
 [2] Zero-Copy (In-Place reserve/commit):
-    Time taken:   0.0533 seconds
-    Throughput:   187.45 Million msg/sec
-    Latency:      5.3 ns per round-trip
+    Time taken:   0.0123 seconds
+    Throughput:   815.67 Million msg/sec
+    Latency:      1.2 ns per round-trip
 
 =========================================================

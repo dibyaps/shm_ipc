@@ -42,11 +42,22 @@
     <h1>🚀 SHM-IPC Test & Benchmark Report</h1>
     
     <div class="cards">
-        <div class="card info"><div>Total Tests</div><div class="num">18</div></div>
-        <div class="card success"><div>Passed</div><div class="num">18</div></div>
+        <div class="card info"><div>Total Tests</div><div class="num">21</div></div>
+        <div class="card success"><div>Passed</div><div class="num">21</div></div>
         <div class="card danger"><div>Failures</div><div class="num">0</div></div>
-        <div class="card info"><div>Total Runtime</div><div class="num">0.059s</div></div>
+        <div class="card info"><div>Total Runtime</div><div class="num">0.061s</div></div>
     </div>
+
+    <h2>🖥️ System & Hardware Environment</h2>
+    <table>
+        <tbody>
+            <tr><td style="width: 25%;"><strong>Distribution</strong></td><td>Ubuntu 26.04.1 LTS</td></tr>
+            <tr><td><strong>Kernel</strong></td><td>Linux 7.0.0-1019-azure</td></tr>
+            <tr><td><strong>CPU Model</strong></td><td>AMD EPYC 9V45 96-Core Processor</td></tr>
+            <tr><td><strong>Logical Cores / Arch</strong></td><td>4 cores (x86_64)</td></tr>
+            <tr><td><strong>Compiler</strong></td><td><code>g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0</code></td></tr>
+        </tbody>
+    </table>
 
     <h2>Test Suite Breakdown</h2>
     <table>
@@ -107,7 +118,7 @@
             </tr><tr>
                 <td><strong>RingBufferTest</strong></td>
                 <td>ConcurrentSPSCStress500K</td>
-                <td>0.006s</td>
+                <td>0.003s</td>
                 <td><span class="badge passed">PASSED</span></td>
             </tr><tr>
                 <td><strong>SDKTest</strong></td>
@@ -137,32 +148,53 @@
             </tr><tr>
                 <td><strong>SDKTest</strong></td>
                 <td>MultiProcessCommunicationViaFork</td>
-                <td>0.002s</td>
+                <td>0.s</td>
                 <td><span class="badge passed">PASSED</span></td>
             </tr><tr>
                 <td><strong>SDKTest</strong></td>
                 <td>FutexSleepAndWakeupAfterDelay</td>
                 <td>0.05s</td>
                 <td><span class="badge passed">PASSED</span></td>
+            </tr><tr>
+                <td><strong>SDKTest</strong></td>
+                <td>ScenarioZeroCopyReserveCommitWithBackpressure</td>
+                <td>0.s</td>
+                <td><span class="badge passed">PASSED</span></td>
+            </tr><tr>
+                <td><strong>SDKTest</strong></td>
+                <td>ScenarioTrySendNonBlockingBackpressure</td>
+                <td>0.s</td>
+                <td><span class="badge passed">PASSED</span></td>
+            </tr><tr>
+                <td><strong>SDKTest</strong></td>
+                <td>ScenarioBlockingSendGuaranteedDeliveryConcurrent</td>
+                <td>0.005s</td>
+                <td><span class="badge passed">PASSED</span></td>
             </tr>
         </tbody>
     </table>
     
         <h2>⚡ Zero-Copy Performance Benchmark</h2>
-        <pre>=========================================================
-  IPC Performance Benchmark: Single-Copy vs. Zero-Copy   
-  Iterations: 10000000 messages (52 bytes each) 
-=========================================================
+        <pre>========================================================================
+  IPC Performance Benchmark: Single-Copy vs. Zero-Copy                  
+  Iterations: 10000000 messages (52 bytes each)                
+------------------------------------------------------------------------
+  [System Environment]
+    CPU Model:    AMD EPYC 9V45 96-Core Processor (4 logical cores)
+    OS & Kernel:  Ubuntu 26.04.1 LTS (Linux 7.0.0-1019-azure x86_64)
+    Architecture: x86_64 | Cache Line: 64 bytes
+    Compiler:     GCC 15.2.0
+========================================================================
 
 [1] Single-Copy (memcpy):
-    Time taken:   0.0845 seconds
-    Throughput:   118.37 Million msg/sec
-    Latency:      8.4 ns per round-trip
+    Time taken:   0.0448 seconds
+    Throughput:   223.07 Million msg/sec
+    Latency:      4.5 ns per round-trip
 
 [2] Zero-Copy (In-Place reserve/commit):
-    Time taken:   0.0533 seconds
-    Throughput:   187.45 Million msg/sec
-    Latency:      5.3 ns per round-trip
+    Time taken:   0.0123 seconds
+    Throughput:   815.67 Million msg/sec
+    Latency:      1.2 ns per round-trip
 
 =========================================================
 </pre>
