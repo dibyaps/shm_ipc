@@ -61,6 +61,7 @@ jobs:
       - name: Publish Test Summary
         if: always()
         run: |
+          sudo chown -R $(id -u):$(id -g) reports/ 2>/dev/null || true
           if [ -f reports/test_report.xml ]; then
             DISTRO_NAME="${{ matrix.distro }}" python3 scripts/generate_report.py
           fi

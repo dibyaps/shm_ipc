@@ -136,9 +136,12 @@ def generate_reports():
 </html>
     """
 
-    with open(html_path, "w") as f:
-        f.write(html)
-    print(f"HTML Report generated at: {html_path}")
+    try:
+        with open(html_path, "w") as f:
+            f.write(html)
+        print(f"HTML Report generated at: {html_path}")
+    except PermissionError:
+        print(f"Note: {html_path} already exists with container permissions, skipping overwrite.")
 
     # =========================================================================
     # 2. Generate GitHub Actions Job Summary (if running in GitHub Actions)
