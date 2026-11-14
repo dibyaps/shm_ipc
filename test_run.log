@@ -1,0 +1,54 @@
+Running main() from ./googletest/src/gtest_main.cc
+[==========] Running 18 tests from 4 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from MemoryLayoutTest
+[ RUN      ] MemoryLayoutTest.CacheLineAlignmentAndSizes
+[       OK ] MemoryLayoutTest.CacheLineAlignmentAndSizes (0 ms)
+[----------] 1 test from MemoryLayoutTest (0 ms total)
+
+[----------] 3 tests from ShmRegionTest
+[ RUN      ] ShmRegionTest.CreateAndMapSuccessfully
+[       OK ] ShmRegionTest.CreateAndMapSuccessfully (0 ms)
+[ RUN      ] ShmRegionTest.OpenNonExistentThrows
+[       OK ] ShmRegionTest.OpenNonExistentThrows (0 ms)
+[ RUN      ] ShmRegionTest.MoveConstructorTransfersOwnership
+[       OK ] ShmRegionTest.MoveConstructorTransfersOwnership (0 ms)
+[----------] 3 tests from ShmRegionTest (0 ms total)
+
+[----------] 7 tests from RingBufferTest
+[ RUN      ] RingBufferTest.EmptyQueueReturnsFalse
+[       OK ] RingBufferTest.EmptyQueueReturnsFalse (0 ms)
+[ RUN      ] RingBufferTest.WriteAndReadSingleMessage
+[       OK ] RingBufferTest.WriteAndReadSingleMessage (0 ms)
+[ RUN      ] RingBufferTest.BufferFullPreventsOverrun
+[       OK ] RingBufferTest.BufferFullPreventsOverrun (0 ms)
+[ RUN      ] RingBufferTest.WrapAroundIntegrity
+[       OK ] RingBufferTest.WrapAroundIntegrity (0 ms)
+[ RUN      ] RingBufferTest.RandomBinaryDataWithNullBytes
+[       OK ] RingBufferTest.RandomBinaryDataWithNullBytes (0 ms)
+[ RUN      ] RingBufferTest.OversizedPayloadClampedGracefully
+[       OK ] RingBufferTest.OversizedPayloadClampedGracefully (0 ms)
+[ RUN      ] RingBufferTest.ConcurrentSPSCStress500K
+[       OK ] RingBufferTest.ConcurrentSPSCStress500K (3 ms)
+[----------] 7 tests from RingBufferTest (4 ms total)
+
+[----------] 7 tests from SDKTest
+[ RUN      ] SDKTest.ConsumerFailsIfProducerDoesNotExist
+[       OK ] SDKTest.ConsumerFailsIfProducerDoesNotExist (0 ms)
+[ RUN      ] SDKTest.StandardSendReceive
+[       OK ] SDKTest.StandardSendReceive (0 ms)
+[ RUN      ] SDKTest.TrueZeroCopyReserveCommitViaSDK
+[       OK ] SDKTest.TrueZeroCopyReserveCommitViaSDK (0 ms)
+[ RUN      ] SDKTest.ZeroCopyStreamMultipleMessages
+[       OK ] SDKTest.ZeroCopyStreamMultipleMessages (0 ms)
+[ RUN      ] SDKTest.ProducerMoveSemantics
+[       OK ] SDKTest.ProducerMoveSemantics (0 ms)
+[ RUN      ] SDKTest.MultiProcessCommunicationViaFork
+[       OK ] SDKTest.MultiProcessCommunicationViaFork (2 ms)
+[ RUN      ] SDKTest.FutexSleepAndWakeupAfterDelay
+[       OK ] SDKTest.FutexSleepAndWakeupAfterDelay (50 ms)
+[----------] 7 tests from SDKTest (53 ms total)
+
+[----------] Global test environment tear-down
+[==========] 18 tests from 4 test suites ran. (57 ms total)
+[  PASSED  ] 18 tests.

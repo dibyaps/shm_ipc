@@ -1,0 +1,16 @@
+=========================================================
+  IPC Performance Benchmark: Single-Copy vs. Zero-Copy   
+  Iterations: 10000000 messages (52 bytes each) 
+=========================================================
+
+[1] Single-Copy (memcpy):
+    Time taken:   0.1123 seconds
+    Throughput:   89.04 Million msg/sec
+    Latency:      11.2 ns per round-trip
+
+[2] Zero-Copy (In-Place reserve/commit):
+    Time taken:   0.0648 seconds
+    Throughput:   154.28 Million msg/sec
+    Latency:      6.5 ns per round-trip
+
+=========================================================
