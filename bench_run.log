@@ -4,13 +4,13 @@
 =========================================================
 
 [1] Single-Copy (memcpy):
-    Time taken:   0.1123 seconds
-    Throughput:   89.04 Million msg/sec
-    Latency:      11.2 ns per round-trip
+    Time taken:   0.0845 seconds
+    Throughput:   118.37 Million msg/sec
+    Latency:      8.4 ns per round-trip
 
 [2] Zero-Copy (In-Place reserve/commit):
-    Time taken:   0.0648 seconds
-    Throughput:   154.28 Million msg/sec
-    Latency:      6.5 ns per round-trip
+    Time taken:   0.0533 seconds
+    Throughput:   187.45 Million msg/sec
+    Latency:      5.3 ns per round-trip
 
 =========================================================

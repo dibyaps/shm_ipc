@@ -29,8 +29,8 @@ Running main() from ./googletest/src/gtest_main.cc
 [ RUN      ] RingBufferTest.OversizedPayloadClampedGracefully
 [       OK ] RingBufferTest.OversizedPayloadClampedGracefully (0 ms)
 [ RUN      ] RingBufferTest.ConcurrentSPSCStress500K
-[       OK ] RingBufferTest.ConcurrentSPSCStress500K (3 ms)
-[----------] 7 tests from RingBufferTest (4 ms total)
+[       OK ] RingBufferTest.ConcurrentSPSCStress500K (6 ms)
+[----------] 7 tests from RingBufferTest (6 ms total)
 
 [----------] 7 tests from SDKTest
 [ RUN      ] SDKTest.ConsumerFailsIfProducerDoesNotExist
@@ -50,5 +50,5 @@ Running main() from ./googletest/src/gtest_main.cc
 [----------] 7 tests from SDKTest (53 ms total)
 
 [----------] Global test environment tear-down
-[==========] 18 tests from 4 test suites ran. (57 ms total)
+[==========] 18 tests from 4 test suites ran. (59 ms total)
 [  PASSED  ] 18 tests.
