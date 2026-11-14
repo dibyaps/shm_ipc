@@ -16,6 +16,9 @@ on:
       - 'docs/**'
       - '.gitignore'
 
+permissions:
+  contents: write
+
 jobs:
   test_linux:
     name: Test on ${{ matrix.distro }}
@@ -54,10 +57,26 @@ jobs:
           make bench
           make test
 
-      # Upload test report artifacts on GitHub Actions
-      - name: Upload Test Report
+      # Publish test and benchmark summary directly to the GitHub Actions run page
+      - name: Publish Test Summary
+        if: always()
+        run: |
+          if [ -f reports/test_report.xml ]; then
+            DISTRO_NAME="${{ matrix.distro }}" python3 scripts/generate_report.py
+          fi
+
+      # Upload test report artifacts
+      - name: Upload Test Report Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports-${{ matrix.distro }}
           path: reports/
+
+      # Deploy HTML dashboard to GitHub Pages on master push
+      - name: Deploy Dashboard to GitHub Pages
+        if: matrix.distro == 'ubuntu-24.04' && github.ref == 'refs/heads/master'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./reports

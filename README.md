@@ -3,6 +3,7 @@
 [![CI Multi-Distro Build & Test](https://github.com/dibyaps/shm_ipc/actions/workflows/ci.yml/badge.svg)](https://github.com/dibyaps/shm_ipc/actions/workflows/ci.yml)
 ![Language](https://img.shields.io/badge/Language-C%2B%2B20-blue.svg)
 ![OS](https://img.shields.io/badge/OS-Rocky%20Linux%209%20%7C%20Ubuntu-orange.svg)
+[![Dashboard](https://img.shields.io/badge/Dashboard-Live%20Report-brightgreen.svg)](https://dibyaps.github.io/shm_ipc/)
 
 A low-latency, lock-free **Single-Producer Single-Consumer (SPSC)** Inter-Process Communication (IPC) middleware engine implemented in modern **C++20** for Linux.
 
@@ -11,12 +12,18 @@ A low-latency, lock-free **Single-Producer Single-Consumer (SPSC)** Inter-Proces
 
 ## Performance Highlights
 
-| Metric | Single-Copy (`memcpy`) | True Zero-Copy (`reserve`/`commit`) | Speedup |
+Tested across 10,000,000 iterations (52-byte payload) on x86_64 hardware and automated multi-distro CI runners:
+
+| Environment / Metric | Single-Copy (`memcpy`) | True Zero-Copy (`reserve`/`commit`) | Speedup |
 | :--- | :--- | :--- | :--- |
-| **Throughput** | 104.82 Million msg/sec | **270.04 Million msg/sec** | **~2.6x Faster** |
-| **Round-Trip Latency** | 9.5 nanoseconds | **3.7 nanoseconds** | **~61% Lower Latency** |
+| **Peak Throughput (x86_64)** | 143.25 Million msg/sec | **416.62 Million msg/sec** | **~2.9x faster** |
+| **Peak Round-Trip Latency** | 7.0 nanoseconds | **2.4 nanoseconds** | **~66% lower latency** |
+| **Rocky Linux 9 (CI Runner)** | 114.65 M msg/sec (8.7 ns) | **171.78 M msg/sec (5.8 ns)** | **~1.5x faster** |
+| **Ubuntu 24.04 (CI Runner)** | 69.38 M msg/sec (14.4 ns) | **113.42 M msg/sec (8.8 ns)** | **~1.6x faster** |
 | **Idle CPU Utilization** | 0.0% (Futex sleep) | 0.0% (Futex sleep) | Zero core starvation |
-| **Data Corruption Rate** | 0% (500k concurrent stress) | 0% (500k concurrent stress) | Strict `acquire`/`release` |
+| **Data Integrity** | 0% loss (500k stress) | 0% loss (500k stress) | Strict acquire/release |
+
+> Live HTML test & benchmark dashboard: [dibyaps.github.io/shm_ipc](https://dibyaps.github.io/shm_ipc/)
 
 ---
 

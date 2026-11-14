@@ -143,24 +143,25 @@ def generate_reports():
     # =========================================================================
     # 2. Generate GitHub Actions Job Summary (if running in GitHub Actions)
     # =========================================================================
+    distro = os.getenv("DISTRO_NAME", "Linux")
     summary_path = os.getenv("GITHUB_STEP_SUMMARY")
     if summary_path:
-        md = f"""### 🚀 SHM-IPC Test Results
+        passed_count = int(total_tests) - int(total_failures)
+        md = f"""### Test Results — {distro}
 | Total Tests | Passed | Failures | Runtime |
 | :---: | :---: | :---: | :---: |
-| **{total_tests}** | 🟢 **{int(total_tests) - int(total_failures)}** | 🔴 **{total_failures}** | **{float(total_time):.3f}s** |
+| **{total_tests}** | **{passed_count}** | **{total_failures}** | **{float(total_time):.3f}s** |
 
-#### Test Suites:
+#### Test Suite Breakdown:
 | Suite | Test Case | Status | Time |
 | :--- | :--- | :---: | :---: |
 """
         for s in suites_data:
             for c in s["cases"]:
-                icon = "✅" if c["status"] == "PASSED" else "❌"
-                md += f"| `{s['name']}` | `{c['name']}` | {icon} {c['status']} | {c['time']}s |\n"
+                md += f"| `{s['name']}` | `{c['name']}` | {c['status']} | {c['time']}s |\n"
 
         if bench_content:
-            md += f"\n#### ⚡ Zero-Copy vs Single-Copy Benchmark:\n```text\n{bench_content}\n```\n"
+            md += f"\n#### Benchmark (Single-Copy vs. Zero-Copy):\n```text\n{bench_content}\n```\n"
 
         with open(summary_path, "a") as f:
             f.write(md)
