@@ -1,6 +1,33 @@
 CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -Wpedantic -Werror -g -O3
-LDFLAGS = -lrt
+
+# -----------------------------------------------------------------------------
+# Build Profiles:
+#   make                -> Release: -O3 -g -DNDEBUG (default, peak low-latency)
+#   make BUILD=debug    -> Debug:   -Og -g -DDEBUG   (clean GDB inspection)
+#   make BUILD=asan     -> ASan:    -Og -fsanitize=address,undefined (memory safety)
+#
+# Dynamic Optimization Override:
+#   make OPT=-O2        -> Custom optimization level on the fly
+# -----------------------------------------------------------------------------
+BUILD ?= release
+
+ifeq ($(BUILD), asan)
+    OPT_FLAGS ?= -Og -g -DDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer
+    EXTRA_LDFLAGS += -fsanitize=address,undefined
+else ifeq ($(BUILD), debug)
+    OPT_FLAGS ?= -Og -g -DDEBUG
+else
+    # Default: release
+    OPT_FLAGS ?= -O3 -g -DNDEBUG
+endif
+
+# Allow user to dynamically override OPT flag (e.g. make OPT=-O2 or make OPT=-O1)
+ifdef OPT
+    OPT_FLAGS = $(OPT) -g
+endif
+
+CXXFLAGS = -std=c++20 -Wall -Wextra -Wpedantic -Werror $(OPT_FLAGS)
+LDFLAGS = -lrt $(EXTRA_LDFLAGS)
 
 SRC_DIR = src
 TEST_DIR = tests

@@ -8,7 +8,6 @@
 #include <linux/futex.h> // For FUTEX_WAIT, FUTEX_WAKE
 #include <sys/syscall.h> // For SYS_futex
 #include <unistd.h>      // For syscall()
-#include <emmintrin.h>   // For _mm_pause() (compiler intrinsic for CPU pause)
 
 // Total size of our shared memory mapping: Header + Array of Slots
 
@@ -42,13 +41,19 @@ class RingBuffer {
     public:
         // Attach the lock-free queue to the raw shared memory pointer
         explicit RingBuffer(void* shm_base, bool initialize) {
-            header = static_cast<IPCHeader*>(shm_base);
-            // The slot array starts immediately after the header
-            slots = reinterpret_cast<Slot*>(static_cast<uint8_t*>(shm_base) + sizeof(IPCHeader));
-
-            // Only the creator (Writer) initializes the atomic variables
+            auto* raw_slots = static_cast<uint8_t*>(shm_base) + sizeof(IPCHeader);
             if (initialize) {
-                new (header) IPCHeader();
+                // Producer: explicitly start object lifetimes via placement new
+                header = new (shm_base) IPCHeader();
+                slots = reinterpret_cast<Slot*>(raw_slots);
+                for (size_t i = 0; i < RING_BUFFER_CAPACITY; ++i) {
+                    new (&slots[i]) Slot();
+                }
+            } else {
+                // Consumer: memory was constructed by Producer in /dev/shm.
+                // std::launder prevents compiler optimization assumption about object provenance.
+                header = std::launder(reinterpret_cast<IPCHeader*>(shm_base));
+                slots = std::launder(reinterpret_cast<Slot*>(raw_slots));
             }
         }
 
@@ -105,8 +110,7 @@ class RingBuffer {
             header->write_index.store(current_write + 1, std::memory_order_release);
 
             // 2. Wake the consumer ONLY if it is sleeping on the futex
-            if (__builtin_expect(header->futex_word.load(std::memory_order_seq_cst) == 1, 0)) {
-                header->futex_word.store(0, std::memory_order_relaxed);
+            if (__builtin_expect(header->futex_word.exchange(0, std::memory_order_seq_cst) == 1, 0)) {
                 futex_wake(&header->futex_word, 1);
             }
         }
@@ -160,7 +164,7 @@ class RingBuffer {
                     if (try_read(out_slot)) {
                         return true;
                     }
-                    _mm_pause(); // CPU pause hint to prevent pipeline stalls
+                    cpu_pause(); // CPU pause hint to prevent pipeline stalls
                 }
 
                 // Phase 2: Spin budget exhausted. Prepare to sleep.
@@ -184,6 +188,10 @@ class RingBuffer {
 
                 // Phase 5: Woken up! Reset state to awake (0) and retry reading.
                 header->futex_word.store(0, std::memory_order_relaxed);
+
+                if (try_read(out_slot)) {
+                    return true;
+                }
 
             }
 
